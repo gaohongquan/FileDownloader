@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using Yunchang.Download;
 
 [CustomEditor(typeof(DownloadAsyncOperation))]
 public class DownloadManagerEditor : Editor
