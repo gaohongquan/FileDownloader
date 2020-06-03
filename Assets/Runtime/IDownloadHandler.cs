@@ -2,21 +2,24 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum DownloadState
+namespace Yunchang.Download
 {
-    none,
-    downloading,
-    error,
-    done
-}
+    public enum DownloadState
+    {
+        none,
+        downloading,
+        error,
+        done
+    }
 
-public interface IDownloadHandler
-{
-    DownloadInfo info { get; set; }
-    DownloadState state { get; set; }
-    float progress { get; }
-    void Start();
-    void Cancel();
+    public interface IDownloadHandler
+    {
+        DownloadInfo info { get; set; }
+        DownloadState state { get; set; }
+        float progress { get; }
+        void Start();
+        void Cancel();
+    }
 }
 
 
