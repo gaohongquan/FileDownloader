@@ -14,19 +14,19 @@ namespace Yunchang.Download
 
         DownloadInfo m_DownloadInfo;
 
-        public FileDownloadHandler()
-        : base(new byte[1024 * 1024])
+        public FileDownloadHandler(DownloadInfo info)
+            :base(new byte[1024 * 1024])
         {
+            m_DownloadInfo = info;
         }
 
-        public bool OpenOrCreateFile(DownloadInfo info)
+        public bool OpenOrCreateFile()
         {
             try
             {
                 m_IsCancel = false;
-                m_DownloadInfo = info;
-                m_Stream = File.Open(info.path, FileMode.OpenOrCreate, FileAccess.Write);
-                m_Stream.Seek(info.currentSize, SeekOrigin.Begin);
+                m_Stream = File.Open(m_DownloadInfo.path, FileMode.OpenOrCreate, FileAccess.Write);
+                m_Stream.Seek(m_DownloadInfo.currentSize, SeekOrigin.Begin);
             }
             catch (Exception exception)
             {
@@ -95,7 +95,6 @@ namespace Yunchang.Download
         public UnityWebRequestHandler()
         {
             state = DownloadState.none;
-            m_FileDownloadHandler = new FileDownloadHandler();
         }
 
         public void Start()
@@ -112,7 +111,8 @@ namespace Yunchang.Download
             }
             else
             {
-                if (!m_FileDownloadHandler.OpenOrCreateFile(info))
+                m_FileDownloadHandler = new FileDownloadHandler(info);
+                if (!m_FileDownloadHandler.OpenOrCreateFile())
                 {
                     state = DownloadState.error;
                     m_FileDownloadHandler.CloseStream();
@@ -135,7 +135,10 @@ namespace Yunchang.Download
 
         public void Cancel()
         {
-            m_FileDownloadHandler.Cancel();
+            if(m_FileDownloadHandler != null)
+            {
+                m_FileDownloadHandler.Cancel();
+            }
         }
 
         private void OnOperationCompleted(AsyncOperation opt)
@@ -147,24 +150,13 @@ namespace Yunchang.Download
                 || info.currentSize < info.totalSize)
             {
                 state = DownloadState.error;
-                //info.error = request.error;
-                //info.responseCode = request.responseCode;
             }
             else
             {
-                /*string hashCode = GetMD5HashFromFile(m_TaskInfo.path);
-                if (!info.md5.Equals(hashCode))
-                {
-                    info.state = HttpDownloadState.error;
-                    info.error = info.request.error;
-                    info.responseCode = info.request.responseCode;
-                }
-                else
-                {*/
                 state = DownloadState.done;
-                //}
             }
             m_FileDownloadHandler.CloseStream();
+            m_FileDownloadHandler = null;
             request.Dispose();
         }
 
