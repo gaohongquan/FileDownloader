@@ -100,7 +100,7 @@ public class Demo : MonoBehaviour
                 DownloadInfo ti = new DownloadInfo
                 {
                     name = item[0],
-                    url = "http://dmccdn.sail2world.com/bundleupdate/android_v143714_202006021504/" + item[0],
+                    url = "http://dmccdn.sail2world.com/bundleupdate/android_v144049_202006031430/" + item[0],
 #if UNITY_EDITOR
                     path = "Assets/../Download/" + item[0],
 #else
