@@ -17,7 +17,6 @@ public class Demo : MonoBehaviour
     public Image imgProgress;
     public Button startButton;
 
-    DownloadInfo[] m_TaskInfos;
     DownloadAsyncOperation m_DownloadOperation;
     Dictionary<string, Text> m_logTextCache = new Dictionary<string, Text>();
     
@@ -30,9 +29,8 @@ public class Demo : MonoBehaviour
         startButton.onClick.AddListener(() =>
         {
             m_StartTime = Time.unscaledTime;
-            m_DownloadOperation = DownloadAsyncOperation.Start<UnityWebRequestHandler>(m_TaskInfos);
+            this.StartCoroutine(DownloadFiles());
         });
-        LoadManifest();
     }
 
     private void OnDestroy()
@@ -46,27 +44,59 @@ public class Demo : MonoBehaviour
         if (m_DownloadOperation == null)
             return;
 
-        if (!m_DownloadOperation.isDone)
+        long size = 0;
+        foreach (var task in m_DownloadOperation.downloadHandles)
         {
-            long size = 0;
-            foreach (var task in m_DownloadOperation.downloadHandles)
+            size += task.info.currentSize;
+            if (task.state == DownloadState.downloading)
             {
-                size += task.info.currentSize;
-                if (task.state == DownloadState.downloading)
-                {
-                    Log(task);
-                }
+                Log(task);
             }
-            txtProgress.text = string.Format("下载进度: {0:f2}%", m_DownloadOperation.progress * 100);
-            txtSize.text = string.Format("下载量: {0:f2}M", size / (1024 * 1024));
-            imgProgress.fillAmount = m_DownloadOperation.progress;
-
-            float time = Time.unscaledTime - m_StartTime;
-            txtTime.text = string.Format("下载耗时: {0:f2} (秒)", time);
-            txtSpeed.text = string.Format("下载速度:{0:f2}K", size / time / 1024);
         }
-        
+        txtProgress.text = string.Format("下载进度: {0:f2}%", m_DownloadOperation.progress * 100);
+        txtSize.text = string.Format("下载量: {0:f2}M", size / (1024 * 1024));
+        imgProgress.fillAmount = m_DownloadOperation.progress;
+
+        float time = Time.unscaledTime - m_StartTime;
+        txtTime.text = string.Format("下载耗时: {0:f2} (秒)", time);
+        txtSpeed.text = string.Format("下载速度:{0:f2}K", size / time / 1024);
     }
+
+    IEnumerator DownloadFiles()
+    {
+        DownloadInfo[] downloadInfos = LoadDownloadInfos();
+        m_DownloadOperation = DownloadAsyncOperation.Start<UnityWebRequestHandler>(downloadInfos, 4);
+        m_DownloadOperation.completed += OnDownloadCompleted;
+        yield return m_DownloadOperation;
+    }
+
+    /*
+    IEnumerator DownloadFiles()
+    {
+        DownloadInfo[] downloadInfos = LoadDownloadInfos();
+        var downloadOperation = DownloadAsyncOperation.Start<UnityWebRequestHandler>(downloadInfos, 4);
+        downloadOperation.completed += OnDownloadCompleted;
+        yield return downloadOperation;
+    }
+
+    IEnumerator DownloadFiles()
+    {
+        DownloadInfo[] downloadInfos = LoadDownloadInfos();
+        var downloadOperation = DownloadAsyncOperation.Start<UnityWebRequestHandler>(downloadInfos, 4);
+        downloadOperation.completed += OnDownloadCompleted;
+        while(!downloadOperation.isDone)
+        {
+            Debug.LogFormat("Download Progress:{0:f2} ", downloadOperation.progress);
+            yield return null;
+        }
+    }
+    */
+    void OnDownloadCompleted(DownloadAsyncOperation downloadAsyncOperation)
+    {
+        m_DownloadOperation = null;
+    }
+
+
 
     void Log(IDownloadHandler handler)
     {
@@ -87,7 +117,7 @@ public class Demo : MonoBehaviour
             logText.color = Color.white;
     }
 
-    private void LoadManifest()
+    private DownloadInfo[] LoadDownloadInfos()
     {
         List<DownloadInfo> tasks = new List<DownloadInfo>();
         string[] lines = manifest.text.Split('\n');
@@ -112,6 +142,6 @@ public class Demo : MonoBehaviour
                 tasks.Add(ti);
             }
         }
-        m_TaskInfos = tasks.ToArray();
+        return tasks.ToArray();
     }
 }
