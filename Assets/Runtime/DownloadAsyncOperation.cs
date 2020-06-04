@@ -7,9 +7,8 @@ namespace Yunchang.Download
 {
     public class DownloadAsyncOperation : CustomYieldInstruction
     {
-        static int MAX_DOWNLOAD_TASK = 4;
-
         private IDownloadHandler[] m_DownloadHandles;
+        private int m_ParallelCount;
         private float m_Progress = 0;
         private bool m_IsDone = false;
         private event Action<DownloadAsyncOperation> m_Completed;
@@ -65,7 +64,7 @@ namespace Yunchang.Download
                     m_DownloadHandles[i].state = DownloadState.none;
             }
 
-            if (count >= MAX_DOWNLOAD_TASK)
+            if (count >= m_ParallelCount)
                 return;
 
             for (int i = 0; i < m_DownloadHandles.Length; i++)
@@ -88,9 +87,10 @@ namespace Yunchang.Download
             m_DownloadHandles = null;
         }
 
-        public static DownloadAsyncOperation Start<T>(DownloadInfo[] files) where T : IDownloadHandler
+        public static DownloadAsyncOperation Start<T>(DownloadInfo[] files,int parallelCount) where T : IDownloadHandler
         {
             var opt = new DownloadAsyncOperation();
+            opt.m_ParallelCount = parallelCount;
             opt.m_DownloadHandles = new IDownloadHandler[files.Length];
             for (int i = 0; i < files.Length; i++)
             {
